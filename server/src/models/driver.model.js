@@ -2,37 +2,34 @@ import mongoose, {Schema} from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
-const userSchema = new Schema(
+const driverSchema = new Schema(
     {
-       /*
-        userId: {
-            type: String,
-            trim: true,
-            required: true,
-            unique: true,
-            lowercase: true
-            // index: true,
-        },
-        */
+        // driverId: {
+        //     type: String,
+        //     trim: true,
+        //     required: true,
+        //     unique: true,
+        //     // index: true,
+        //     lowercase: true
+        // },
         phoneno: {
             type: String,
             required: true,
-            trim: true,
-            unique: true,
-            index: true
+            trim: true
         },
         email: {
             type: String,
+            required: true,
             unique: true,
-            sparse: true //Optional But Unique
-        },
-        password: {
-            type: String,
-            required: [true, 'Password is required']
+            index: true
         },
         name: {
             type: String,
             required: true
+        },
+        password: {
+            type: String,
+            required: [true, 'Password is required']
         },
         refreshToken: {
             type: String
@@ -41,40 +38,29 @@ const userSchema = new Schema(
     {
         timestamps: true
     }
+
 );
 
-// Middleware to generate a unique userId before saving
-/*
-userSchema.pre("save", function (next) {
-    if (!this.userId) {
-      this.userId = `user${Math.floor(1000 + Math.random() * 9000)}`; // Generates userId like user1234
-    }
-    next();
-});
-*/
-
-//Middleware for Password Hashing
-userSchema.pre("save", async function (next) {
-    //If the password field is not modified return next
+//Hash the Password if the password field is modified
+driverSchema.pre("save", async function (next) {
     if(!this.isModified("password")) return next();
-    
-    //Else hash the password
+
     this.password = await bcrypt.hash(this.password, 10)
     next();
-});
+})
 
-// Compare Passwords
-userSchema.methods.isPasswordCorrect = async function(password){
+//Compairing the password
+driverSchema.methods.isPasswordCorrect = async function(password){
     return await bcrypt.compare(password, this.password)
 }
 
-userSchema.methods.generateAccessToken = async function(){
+driverSchema.methods.generateAccessToken = async function(){
         return await jwt.sign(
         {
             _id: this._id,
-            phoneno: this.phoneno,
+            driverId: this.driverId,
+            email: this.email,
             name: this.name
-            //userId: this.userId,
         },
         process.env.ACCESS_TOKEN_SECRET,
         {
@@ -82,11 +68,11 @@ userSchema.methods.generateAccessToken = async function(){
         }
     )
 }
-
-userSchema.methods.generateRefreshToken = async function(){
+driverSchema.methods.generateRefreshToken = async function(){
         return await jwt.sign(
         {
             _id: this._id,
+            
         },
         process.env.REFRESH_TOKEN_SECRET,
         {
@@ -95,4 +81,4 @@ userSchema.methods.generateRefreshToken = async function(){
     )
 }
 
-export const User = mongoose.model("User", userSchema);
+export const Driver = mongoose.model("Driver", driverSchema);
